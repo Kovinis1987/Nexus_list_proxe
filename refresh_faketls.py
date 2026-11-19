@@ -4,6 +4,7 @@ import concurrent.futures
 import hashlib
 import hmac
 import ipaddress
+import json
 import os
 from pathlib import Path
 import re
@@ -22,7 +23,15 @@ SOURCES = (
     "https://raw.githubusercontent.com/tgmtproxy/telegram-mtproto-proxy-list/main/proxies.txt",
     "https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt",
 )
-CLOUDFLARE = ("https://www.cloudflare.com/ips-v4", "https://www.cloudflare.com/ips-v6")
+CLOUDFLARE_API = "https://api.cloudflare.com/client/v4/ips"
+# Official public ranges checked 2026-11-19: https://www.cloudflare.com/ips/
+CLOUDFLARE_BASELINE = """
+103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 104.16.0.0/13 104.24.0.0/14
+108.162.192.0/18 131.0.72.0/22 141.101.64.0/18 162.158.0.0/15 172.64.0.0/13
+173.245.48.0/20 188.114.96.0/20 190.93.240.0/20 197.234.240.0/22 198.41.128.0/17
+2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32
+2a06:98c0::/29 2c0f:f248::/32
+"""
 NAME = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+")
 MAX_PER_SOURCE = 48
 MAX_PUBLISHED = 12
@@ -189,13 +198,16 @@ def probe(proxy, cloudflare):
 
 
 def main():
-    # Fail closed if either official address list is unavailable.
-    ranges = []
-    for family, url in zip((4, 6), CLOUDFLARE):
-        blocks = [ipaddress.ip_network(line) for line in download(url, 32_768).splitlines() if line.strip()]
-        if not blocks or any(block.version != family for block in blocks):
-            raise ValueError("Invalid Cloudflare IP list")
-        ranges.extend(blocks)
+    ranges = {ipaddress.ip_network(block) for block in CLOUDFLARE_BASELINE.split()}
+    try:
+        metadata = json.loads(download(CLOUDFLARE_API, 32_768))
+        if not metadata["success"]:
+            raise ValueError("Cloudflare IP API returned an error")
+        latest = metadata["result"]
+        ranges.update(ipaddress.ip_network(block)
+                      for block in latest["ipv4_cidrs"] + latest["ipv6_cidrs"])
+    except (OSError, ValueError, KeyError, TypeError):
+        print("Cloudflare API unavailable; using the bundled official ranges.")
     candidates = {}
     previous = FEED.read_text(encoding="utf-8").splitlines()
     batches = [previous]
