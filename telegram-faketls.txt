@@ -1,0 +1,4 @@
+# Nexus public Telegram MTProto FakeTLS catalog
+# One publicly advertised tg://proxy link per line. Tested on 2026-11-19 from a VPN-routed workplace; availability varies by network.
+tg://proxy?server=tg.getrocket.me&port=443&secret=eef84b5bf22712eba2c12b8c0582237add74672e676574726f636b65742e6d65
+tg://proxy?server=n9c17f5.tidalcache.com&port=443&secret=ee5c89ab20266ce759f96a0745b63d7cdf656467652e746964616c63616368652e636f6d
