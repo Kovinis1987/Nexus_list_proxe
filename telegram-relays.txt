@@ -1,0 +1,23 @@
+# Nexus Telegram WSS relay catalog
+# One base domain per line. Each relay must serve kws1 through kws5 over WSS.
+# Initial snapshot from Nexus. Availability depends on the client network.
+pclead.co.uk
+offshor.co.uk
+cakeisalie.co.uk
+noskomnadzor.co.uk
+lovetrue.co.uk
+sorokdva.co.uk
+pyatdesyatdva.co.uk
+kartoshka.co.uk
+sorokodin.co.uk
+pyatdesyatodin.co.uk
+notelega.co.uk
+ebally.co.uk
+nebally.co.uk
+havegreatday.co.uk
+pomogite.co.uk
+fixtelega.co.uk
+sadnews.co.uk
+onedaychamp.co.uk
+stopblocking.co.uk
+nothingthere.co.uk
