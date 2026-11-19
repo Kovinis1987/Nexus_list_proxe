@@ -1,0 +1,66 @@
+name: Refresh FakeTLS and publish Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+  push:
+    branches: [main]
+    paths: ['telegram-*.txt', 'refresh_faketls.py', '.github/workflows/refresh-faketls.yml']
+
+permissions: {}
+
+concurrency:
+  group: nexus-proxy-pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install probe dependency
+        run: python -m pip install --only-binary=:all: cryptography==49.0.0
+      - name: Verify FakeTLS candidates
+        run: python refresh_faketls.py
+      - name: Update the published list in main
+        run: |
+          if git diff --quiet -- telegram-faketls.txt; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- telegram-faketls.txt
+          git commit -m 'Refresh verified Telegram FakeTLS proxies'
+          git push origin HEAD:main
+      - name: Stage public catalog files
+        run: |
+          mkdir site
+          cp telegram-relays.txt telegram-faketls.txt site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - name: Deploy the proxy catalogs
+        id: pages
+        uses: actions/deploy-pages@v4
