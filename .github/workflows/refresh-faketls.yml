@@ -29,7 +29,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install probe dependency
-        run: python -m pip install --only-binary=:all: cryptography==49.0.0
+        run: |
+          python -m pip install --only-binary=:all: cryptography==49.0.0
       - name: Verify FakeTLS candidates
         run: python refresh_faketls.py
       - name: Update the published list in main
